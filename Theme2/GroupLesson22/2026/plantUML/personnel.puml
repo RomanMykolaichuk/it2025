@@ -1,0 +1,78 @@
+@startuml PersonnelAccounting
+
+' Стиль
+hide circle
+skinparam linetype ortho
+skinparam entityBackgroundColor #EEF3F7
+skinparam entityBorderColor #2F4F6F
+
+entity "Unit" as Unit {
+  + unit_id : int <<PK>>
+  --
+  unit_name : text
+  unit_type : text
+  parent_unit_code : text
+}
+
+entity "Rank" as Rank {
+  + rank_id : int <<PK>>
+  --
+  rank_name : text
+  rank_order : int
+}
+
+entity "Position" as Position {
+  + position_id : int <<PK>>
+  --
+  position_name : text
+  category : text
+}
+
+entity "Personnel" as Personnel {
+  + person_id : int <<PK>>
+  --
+  personal_number : text
+  last_name : text
+  first_name : text
+  middle_name : text
+  date_of_birth : date
+  enlistment_date : date
+  status : text
+  --
+  unit_id : int <<FK>>
+  rank_id : int <<FK>>
+  position_id : int <<FK>>
+}
+
+entity "ServiceEvent" as ServiceEvent {
+  + event_id : int <<PK>>
+  --
+  event_date : date
+  event_type : text
+  document_number : text
+  note : text
+  --
+  person_id : int <<FK>>
+}
+
+entity "TrainingRecord" as TrainingRecord {
+  + training_id : int <<PK>>
+  --
+  start_date : date
+  end_date : date
+  course_name : text
+  result : text
+  certificate_number : text
+  --
+  person_id : int <<FK>>
+}
+
+' Зв’язки
+Unit ||--o{ Personnel : "has"
+Rank ||--o{ Personnel : "assigns"
+Position ||--o{ Personnel : "holds"
+
+Personnel ||--o{ ServiceEvent : "has"
+Personnel ||--o{ TrainingRecord : "completes"
+
+@enduml
