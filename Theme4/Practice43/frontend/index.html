@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reports Dashboard</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      color: #f1f5f9;
+      min-height: 100vh;
+      padding: 30px;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .header {
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 36px;
+      margin-bottom: 10px;
+      color: #38bdf8;
+    }
+
+    .header p {
+      color: #cbd5e1;
+      font-size: 18px;
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-bottom: 25px;
+      background: rgba(255, 255, 255, 0.06);
+      padding: 18px;
+      border-radius: 16px;
+      backdrop-filter: blur(8px);
+    }
+
+    .status {
+      font-size: 15px;
+      color: #93c5fd;
+    }
+
+    .btn {
+      border: none;
+      background: #38bdf8;
+      color: #0f172a;
+      padding: 12px 18px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: 0.2s ease;
+    }
+
+    .btn:hover {
+      background: #0ea5e9;
+      transform: translateY(-1px);
+    }
+
+    .grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .card {
+      flex: 1 1 calc(33.333% - 20px);
+      min-width: 260px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+      transition: 0.25s ease;
+      backdrop-filter: blur(10px);
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 16px 35px rgba(0, 0, 0, 0.35);
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .report-id {
+      font-size: 14px;
+      color: #94a3b8;
+    }
+
+    .user-badge {
+      background: #1d4ed8;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    .content-label {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #7dd3fc;
+      margin-bottom: 8px;
+    }
+
+    .content-text {
+      font-size: 20px;
+      line-height: 1.4;
+      color: #f8fafc;
+      word-break: break-word;
+    }
+
+    .loading,
+    .error,
+    .empty {
+      margin-top: 20px;
+      padding: 20px;
+      border-radius: 14px;
+      font-size: 18px;
+    }
+
+    .loading {
+      background: rgba(56, 189, 248, 0.12);
+      color: #7dd3fc;
+    }
+
+    .error {
+      background: rgba(239, 68, 68, 0.15);
+      color: #fecaca;
+    }
+
+    .empty {
+      background: rgba(255, 255, 255, 0.08);
+      color: #cbd5e1;
+    }
+
+    .footer {
+      margin-top: 35px;
+      text-align: center;
+      color: #94a3b8;
+      font-size: 14px;
+    }
+
+    @media (max-width: 900px) {
+      .card {
+        flex: 1 1 calc(50% - 20px);
+      }
+
+      .header h1 {
+        font-size: 30px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 18px;
+      }
+
+      .card {
+        flex: 1 1 100%;
+      }
+
+      .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .btn {
+        width: 100%;
+      }
+
+      .header h1 {
+        font-size: 26px;
+      }
+
+      .header p {
+        font-size: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Звіти системи</h1>
+      <p>Візуалізація даних з ендпоінта <strong>/reports</strong></p>
+    </div>
+
+    <div class="toolbar">
+      <div class="status" id="statusText">Очікування завантаження даних...</div>
+      <button class="btn" onclick="loadReports()">Оновити дані</button>
+    </div>
+
+    <div id="messageArea" class="loading">Завантаження...</div>
+    <div id="reportsGrid" class="grid"></div>
+
+    <div class="footer">
+      Простий інформаційний веб-інтерфейс для перегляду звітів
+    </div>
+  </div>
+
+  <script>
+    const API_URL = "http://localhost:8000/reports";
+
+    async function loadReports() {
+      const messageArea = document.getElementById("messageArea");
+      const reportsGrid = document.getElementById("reportsGrid");
+      const statusText = document.getElementById("statusText");
+
+      messageArea.className = "loading";
+      messageArea.textContent = "Завантаження даних з сервера...";
+      messageArea.style.display = "block";
+      reportsGrid.innerHTML = "";
+      statusText.textContent = "Отримання даних...";
+
+      try {
+        const response = await fetch(API_URL);
+
+        if (!response.ok) {
+          throw new Error("Помилка HTTP: " + response.status);
+        }
+
+        const reports = await response.json();
+
+        if (!Array.isArray(reports) || reports.length === 0) {
+          messageArea.className = "empty";
+          messageArea.textContent = "Записи відсутні.";
+          statusText.textContent = "Дані завантажено, але список порожній.";
+          return;
+        }
+
+        messageArea.style.display = "none";
+        statusText.textContent = `Успішно завантажено записів: ${reports.length}`;
+
+        reports.forEach(report => {
+          const card = document.createElement("div");
+          card.className = "card";
+
+          card.innerHTML = `
+            <div class="card-top">
+              <div class="report-id">ID: ${report.id}</div>
+              <div class="user-badge">${escapeHtml(report.username)}</div>
+            </div>
+            <div class="content-label">Зміст звіту</div>
+            <div class="content-text">${escapeHtml(report.content)}</div>
+          `;
+
+          reportsGrid.appendChild(card);
+        });
+      } catch (error) {
+        messageArea.className = "error";
+        messageArea.textContent = "Не вдалося отримати дані з ендпоінта: " + error.message;
+        statusText.textContent = "Помилка завантаження.";
+      }
+    }
+
+    function escapeHtml(value) {
+      if (value === null || value === undefined) return "";
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    loadReports();
+  </script>
+</body>
+</html>
